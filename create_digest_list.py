@@ -174,6 +174,8 @@ def get_best_sha_function(path):
 
             for j in range(8):
                 mult = mini + (j - 5) * 16
+                if mult < 1:
+                    continue
                 start_time = time.time()
                 for dummy in range(calls_count):
                     function(test_file, mult)
