@@ -91,7 +91,7 @@ if os.name == "posix":
 
     def compute_sha_subprocess(filename, multiplier):
         output = subprocess.Popen([control_type + "sum", filename], stdout=subprocess.PIPE).communicate()[0]
-        return output.split(" ")[0]
+        return output.split(b" ")[0]
     compute_sum_funct_list.append((False, compute_sha_subprocess))
 
 
