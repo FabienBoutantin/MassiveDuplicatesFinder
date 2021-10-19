@@ -299,7 +299,7 @@ def my_walk_sp(dir, outfile, autodetect=False):
         res += "(%s) %s (%i)\n" % (filesize_str, time.ctime(file_mtime), file_mtime)
 
         if filename in reloaded_entries and reloaded_entries[filename][0] == file_mtime:
-            res += "'%s'" % reloaded_entries[filename][1]
+            res += "'%s'" % reloaded_entries[filename][1].decode("utf-8")
         else:
             if dry_run:
                 res = res + "None"
@@ -383,7 +383,7 @@ def compute_element(dir, multiplier, compute_sha, q, current_file, current_file_
         res += "(%s) %s (%i)\n" % (filesize_str, time.ctime(file_mtime), file_mtime)
 
         if filename in reloaded_entries and reloaded_entries[filename][0] == file_mtime:
-            res += "'%s'" % reloaded_entries[filename][1]
+            res += "'%s'" % reloaded_entries[filename][1].decode("utf-8")
         else:
             if dry_run:
                 res += "None"
@@ -563,7 +563,7 @@ def reload_previous_run(output):
         elif key is not None and mtime is None:
             mtime = line.rstrip().split(b" ")[-1][1:-1]
         elif line.startswith(b"'"):
-            reloaded_entries[key] = (int(float(mtime)), line.rstrip().strip(b"'\"").decode("utf-8"))
+            reloaded_entries[key] = (int(float(mtime)), line.rstrip().strip(b"'\""))
             key = None
             mtime = None
         else:
