@@ -7,7 +7,6 @@ import sys
 import time
 from os.path import join, getsize
 from optparse import OptionParser
-import binascii
 import hashlib
 
 from multiprocessing import Process, Value, Queue, Lock, cpu_count
@@ -249,7 +248,7 @@ def my_walk_sp(dir, outfile, autodetect=False):
     start_time = time.time()
     computation_time = 0
     computation_size = 0
-    h, w = cc.get_size()
+    w, h = cc.get_size()
     print("Remaining files and size; average speed; ETA; current file size; current file")
     file_id = 0
     res = ""
@@ -287,7 +286,7 @@ def my_walk_sp(dir, outfile, autodetect=False):
 
             output += " " * (9 - len(filesize_str)) + filesize_str + " "
             if file_id % 100 == 0:
-                h, w = cc.get_size()
+                w, h = cc.get_size()
             small_filename = filename[-1 * (w - len(output)):]
             output += small_filename
             output += " " * (w - len(output))
@@ -350,7 +349,7 @@ def my_walk_sp(dir, outfile, autodetect=False):
 
 def compute_element(dir, multiplier, compute_sha, q, current_file, current_file_size, outfile, p_alive, file_id, computation_size, stdout_lock, files_lock):
     computation_time = 0
-    h, w = cc.get_size()
+    w, h = cc.get_size()
     res = ""
     done = False
     while not done:
@@ -449,7 +448,7 @@ def my_walk_mp(dir, outfile, autodetect=False):
     files_lock = Lock()
     # actually do the job
     computation_time = 0
-    h, w = cc.get_size()
+    w, h = cc.get_size()
     print("Remaining files and size; average speed; ETA; current file size; current file")
 
     p_alive = Value('b', True)
@@ -510,7 +509,7 @@ def my_walk_mp(dir, outfile, autodetect=False):
 
         if is_output_atty:
             if remaining_items % 100 == 0:
-                h, w = cc.get_size()
+                w, h = cc.get_size()
             small_filename = current_file.value[-1 * (w - len(output)):]
             output += small_filename
             output += " " * (w - len(output))
