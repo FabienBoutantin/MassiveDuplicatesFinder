@@ -204,6 +204,11 @@ def count_entries(path, file_count, whole_size, q):
             filename = join(root, name)
             if not os.path.exists(filename):
                 continue
+            try:
+                # TODO: Find a way to handle non UTF-8 filenames?
+                filename.encode("utf-8")
+            except UnicodeEncodeError:
+                continue
             if os.path.islink(filename):
                 tmp_cnt -= 1
                 continue
