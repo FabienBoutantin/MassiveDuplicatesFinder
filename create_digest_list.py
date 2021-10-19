@@ -563,7 +563,7 @@ def reload_previous_run(output):
         elif key is not None and mtime is None:
             mtime = line.rstrip().split(b" ")[-1][1:-1]
         elif line.startswith(b"'"):
-            reloaded_entries[key] = (int(float(mtime)), line.rstrip().strip(b"'\""))
+            reloaded_entries[key] = (int(float(mtime)), line.rstrip().strip(b"'\"").decode("utf-8"))
             key = None
             mtime = None
         else:
