@@ -427,7 +427,7 @@ def compute_element(dir, multiplier, compute_sha, q, current_file, current_file_
         files_lock.release()
 
 
-def my_walk_mp(dir, outfile, autodetect=False):
+def my_walk_mp(number_of_process, dir, outfile, autodetect=False):
     dir = os.path.realpath(dir)
 
     if autodetect:
@@ -453,10 +453,9 @@ def my_walk_mp(dir, outfile, autodetect=False):
     print("Remaining files and size; average speed; ETA; current file size; current file")
 
     p_alive = Value('b', True)
-    NUMBER_OF_PROCESSES = cpu_count()
     # Start worker processes
     processes = list()
-    for i in range(NUMBER_OF_PROCESSES):
+    for i in range(number_of_process):
         file_id = Value('d', 0.0)
         computation_size = Value('d', 0.0)
         processes.append(
@@ -680,8 +679,9 @@ if __name__ == "__main__":
                 else:
                     outfile = os.path.join(cwd, options.output_name)
             if options.multiprocess:
-                my_walk_mp(".", outfile, options.autodetect_best_file_access)
+                my_walk_mp(cpu_count(), ".", outfile, options.autodetect_best_file_access)
             else:
+                # my_walk_mp(1, ".", outfile, options.autodetect_best_file_access)
                 my_walk_sp(".", outfile, options.autodetect_best_file_access)
         except Exception:
             cc.error("\n\n  %s\n" % get_exception_string())
