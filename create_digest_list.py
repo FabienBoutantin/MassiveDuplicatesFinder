@@ -204,11 +204,6 @@ def count_entries(path, file_count, whole_size, q):
             filename = join(root, name)
             if not os.path.exists(filename):
                 continue
-            try:
-                # TODO: Find a way to handle non UTF-8 filenames?
-                filename.encode("utf-8")
-            except UnicodeEncodeError:
-                continue
             if os.path.islink(filename):
                 tmp_cnt -= 1
                 continue
@@ -296,14 +291,15 @@ def my_walk_sp(dir, outfile, autodetect=False):
             output += small_filename
             output += " " * (w - len(output))
 
-            print(output, end="")
+            print(output.encode("utf8", "replace").decode(), end="")
             sys.stdout.flush()
 
-        res += ">%s\n" % filename[dir_size:]
+        clean_filename = filename.encode("utf8", "replace").decode()
+        res += ">%s\n" % clean_filename[dir_size:]
         res += "(%s) %s (%i)\n" % (filesize_str, time.ctime(file_mtime), file_mtime)
 
-        if filename in reloaded_entries and reloaded_entries[filename][0] == file_mtime:
-            res += "'%s'" % reloaded_entries[filename][1].decode("utf-8")
+        if clean_filename in reloaded_entries and reloaded_entries[clean_filename][0] == file_mtime:
+            res += "'%s'" % reloaded_entries[clean_filename][1].decode("utf-8")
         else:
             if dry_run:
                 res = res + "None"
@@ -383,7 +379,7 @@ def compute_element(dir, multiplier, compute_sha, q, current_file, current_file_
             continue
         file_id.value += 1
 
-        res += ">%s\n" % filename[len(dir) + 1:]
+        res += ">%s\n" % filename[len(dir) + 1:].encode("utf8", "replace").decode()
         res += "(%s) %s (%i)\n" % (filesize_str, time.ctime(file_mtime), file_mtime)
 
         if filename in reloaded_entries and reloaded_entries[filename][0] == file_mtime:
@@ -523,9 +519,9 @@ def my_walk_mp(dir, outfile, autodetect=False):
 
         stdout_lock.acquire()
         if verbose or not is_output_atty:
-            print(output)
+            print(output.encode("utf8", "replace").decode())
         else:
-            print(output, end="")
+            print(output.encode("utf8", "replace").decode(), end="")
         sys.stdout.flush()
         stdout_lock.release()
         time.sleep(4)
