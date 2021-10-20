@@ -233,7 +233,7 @@ def my_walk_sp(dir, outfile, autodetect=False):
     if autodetect:
         multiplier, compute_sha = get_best_sha_function(dir)
     else:
-        multiplier, compute_sha = 512, compute_sha_python
+        multiplier, compute_sha = 512, compute_sum_funct_list[-1][1]
 
     file_count = Value('d', 0.0)
     whole_size = Value('d', 0.0)
@@ -433,7 +433,7 @@ def my_walk_mp(dir, outfile, autodetect=False):
     if autodetect:
         multiplier, compute_sha = get_best_sha_function(dir)
     else:
-        multiplier, compute_sha = 512, compute_sha_python
+        multiplier, compute_sha = 512, compute_sum_funct_list[-1][1]
 
     file_count = Value('d', 0.0)
     whole_size = Value('d', 0.0)
