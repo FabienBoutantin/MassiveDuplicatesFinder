@@ -6,7 +6,7 @@ import os
 import sys
 import time
 from os.path import join, getsize
-from optparse import OptionParser
+import argparse
 import hashlib
 
 from multiprocessing import Process, Value, Queue, Lock, cpu_count
@@ -579,94 +579,106 @@ outfile = None
 reloaded_entries = dict()
 if __name__ == "__main__":
     cc = color_console.ColorConsole()
-    usage = "usage: %prog [options] dir1 [dir2]"
-    parser = OptionParser(usage=usage)
+    parser = argparse.ArgumentParser()
 
     parser.set_defaults(mode="sha512")
-    parser.add_option(
+    parser.add_argument(
         "-f", "--force", dest="force",
         action="store_true", help="Reply 'Yes' to all questions."
     )
-    parser.add_option(
-        "-o", "--output", dest="output_name",
+    parser.add_argument(
+        "-o", "--output", dest="output_name", default="output.txt",
         metavar="FILE", help="write output to FILE"
     )
-    parser.add_option(
+    parser.add_argument(
         "-a", "--append",
         action="store_true", dest="append", help="Append Digest to FILE content"
     )
-    parser.add_option(
+    parser.add_argument(
         "-r", "--resume",
         action="append", dest="resume", help="Resume a stopped action"
     )
-    parser.add_option(
+    parser.add_argument(
         "--md5", action="store_const",
         dest="mode", const="md5", help=""
     )
-    parser.add_option(
+    parser.add_argument(
         "--sha1", action="store_const",
         dest="mode", const="sha1", help=""
     )
-    parser.add_option(
+    parser.add_argument(
         "--sha256", action="store_const",
         dest="mode", const="sha256", help=""
     )
-    parser.add_option(
+    parser.add_argument(
         "--sha512", action="store_const",
         dest="mode", const="sha512", help="Default"
     )
-    parser.add_option(
+    parser.add_argument(
         '-d', "--autodetect_best_file_access", action="store_true",
         dest="autodetect_best_file_access", help="Try accessing some files with different options to get best access speed."
     )
-    parser.add_option(
+    parser.add_argument(
         "-p", "--multiprocess", action="store_true",
-        dest="multiprocess", help="Makes computation multi threaded."
+        dest="multiprocess", help="[Deprecated] Makes computation multi threaded using all CPUs."
     )
-    parser.add_option(
+    parser.add_argument(
+        "-j", nargs="?", default=1, const=cpu_count(), type=int,
+        dest="cpu_count", help="Number of concurrent threads."
+    )
+    parser.add_argument(
         "-v", "--verbose",
         action="store_true", dest="verbose", help="make lots of noise"
     )
-    parser.add_option(
+    parser.add_argument(
         "-n", "--dry-run",
         action="store_true", dest="dry_run", help="do no harm"
     )
-    (options, args) = parser.parse_args()
-    if len(args) == 0:
-        parser.print_help()
-        sys.exit(-1)
+    parser.add_argument(
+        "directories", metavar="DIR", nargs="+", help="Directory to analyze."
+    )
+    arguments = parser.parse_args()
+    if arguments.cpu_count <= 0:
+        cc.red()
+        print("Error: cannot use negative number of threads.")
+        cc.reset()
+        parser.print_usage()
+        exit(1)
+    if arguments.multiprocess:
+        cc.yellow()
+        print("Warning: -p/--multiprocess option is deprecated, use -j instead.")
+        cc.reset()
+        arguments.cpu_count = cpu_count()
 
-    control_type = options.mode
-    if options.output_name is None:
-        options.output_name = "./output.txt"
-    if os.path.isfile(options.output_name) and not options.append:
-        cc.warning("Warning, this will overwrite the output file (%s)" % options.output_name)
+    control_type = arguments.mode
+    if os.path.isfile(arguments.output_name) and not arguments.append:
+        cc.warning("Warning, this will overwrite the output file (%s)" % arguments.output_name)
         print()
-        if not options.force and not cc.acknowledgment("Continue anyway?", True):
+        if not arguments.force and not cc.acknowledgment("Continue anyway?", True):
             exit(0)
-    verbose = options.verbose
-    dry_run = options.dry_run
+    verbose = arguments.verbose
+    dry_run = arguments.dry_run
 
     cwd = os.getcwd()
-    if options.resume is not None:
-        for item in options.resume:
+    if arguments.resume is not None:
+        for item in arguments.resume:
             print("Reading %s file" % item)
             prev_reload_entry_size = len(reloaded_entries)
             if not reload_previous_run(item):
                 sys.exit(1)
             print("  => Found", len(reloaded_entries) - prev_reload_entry_size, "entries.")
     # raw_input("Reloaded>")
-    for i, arg in enumerate(args):
+    for i, arg in enumerate(arguments.directories):
         print("Handling", arg)
         if not os.path.isdir(arg):
             print("  -> is not a directory, do not process.")
             continue
         if not dry_run:
-            if options.append or i > 0:
-                outfile = open(options.output_name, "at")
+            if arguments.append or i > 0:
+                outfile = open(arguments.output_name, "at")
                 errorfile = open("errors.log", "at")
             else:
-                outfile = open(options.output_name, "wt")
+                outfile = open(arguments.output_name, "wt")
                 errorfile = open("errors.log", "wt")
             header = "%s\n# %s\n%s\n" % ("#" * 80, os.path.realpath(arg), "#" * 80)
             outfile.write(header)
@@ -674,15 +686,16 @@ if __name__ == "__main__":
         os.chdir(arg)
         try:
             if outfile is not None:
-                if os.path.isabs(options.output_name):
-                    outfile = options.output_name
+                if os.path.isabs(arguments.output_name):
+                    outfile = arguments.output_name
                 else:
-                    outfile = os.path.join(cwd, options.output_name)
-            if options.multiprocess:
-                my_walk_mp(cpu_count(), ".", outfile, options.autodetect_best_file_access)
+                    outfile = os.path.join(cwd, arguments.output_name)
+            if arguments.cpu_count > 1:
+                print(f"Using {arguments.cpu_count} parallel jobs.")
+                my_walk_mp(arguments.cpu_count, ".", outfile, arguments.autodetect_best_file_access)
             else:
-                # my_walk_mp(1, ".", outfile, options.autodetect_best_file_access)
-                my_walk_sp(".", outfile, options.autodetect_best_file_access)
+                # my_walk_mp(1, ".", outfile, arguments.autodetect_best_file_access)
+                my_walk_sp(".", outfile, arguments.autodetect_best_file_access)
         except Exception:
             cc.error("\n\n  %s\n" % get_exception_string())
             sys.exit(-2)
