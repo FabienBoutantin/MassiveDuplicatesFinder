@@ -579,6 +579,7 @@ outfile = None
 reloaded_entries = dict()
 if __name__ == "__main__":
     cc = color_console.ColorConsole()
+    command_line = sys.argv[1:]
     parser = argparse.ArgumentParser()
 
     parser.set_defaults(mode="sha512")
@@ -626,6 +627,13 @@ if __name__ == "__main__":
         "-j", nargs="?", default=1, const=cpu_count(), type=int,
         dest="cpu_count", help="Number of concurrent threads."
     )
+    # Fix command line to allow `-j` without number
+    if "-j" in command_line:
+        try:
+            int(command_line[command_line.index("-j") + 1])
+        except ValueError:
+            # if it's not an int, then use maximum CPU available
+            command_line.insert(command_line.index("-j") + 1, str(cpu_count()))
     parser.add_argument(
         "-v", "--verbose",
         action="store_true", dest="verbose", help="make lots of noise"
@@ -637,7 +645,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "directories", metavar="DIR", nargs="+", help="Directory to analyze."
     )
-    arguments = parser.parse_args()
+    arguments = parser.parse_intermixed_args(command_line)
     if arguments.cpu_count <= 0:
         cc.red()
         print("Error: cannot use negative number of threads.")
