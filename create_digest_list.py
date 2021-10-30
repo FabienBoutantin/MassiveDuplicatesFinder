@@ -645,7 +645,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "directories", metavar="DIR", nargs="+", help="Directory to analyze."
     )
-    arguments = parser.parse_intermixed_args(command_line)
+    try:
+        arguments = parser.parse_intermixed_args(command_line)
+    except AttributeError:
+        arguments = parser.parse_args(command_line)
     if arguments.cpu_count <= 0:
         cc.red()
         print("Error: cannot use negative number of threads.")
